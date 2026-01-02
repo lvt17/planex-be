@@ -44,6 +44,9 @@ class Config:
     
     # Upload folder
     UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', '/tmp')
+    
+    # CORS
+    ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:3001,http://localhost:3002').split(',')
 
 
 class DevelopmentConfig(Config):
