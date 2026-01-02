@@ -167,3 +167,103 @@ def delete_user(user_id):
     db.session.delete(user)
     db.session.commit()
     return jsonify({'message': 'User deleted permanently'})
+
+
+@bp.route('/admin/surveys/export', methods=['GET'])
+def export_surveys():
+    """Export survey data to Excel"""
+    token = request.headers.get('X-Admin-Token')
+    if token != 'secret-admin-token-2026':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+        from io import BytesIO
+        from flask import send_file
+        
+        # Create workbook
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Survey Data"
+        
+        # Header styling
+        header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+        header_font = Font(bold=True, color="FFFFFF")
+        
+        # Headers
+        headers = ['Username', 'Email', 'Tools', 'Major', 'Want']
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal='center')
+        
+        # Data
+        surveys = UserSurvey.query.all()
+        for row_idx, survey in enumerate(surveys, 2):
+            user = User.query.get(survey.user_id)
+            ws.cell(row=row_idx, column=1, value=user.username if user else 'Unknown')
+            ws.cell(row=row_idx, column=2, value=user.email if user else 'Unknown')
+            ws.cell(row=row_idx, column=3, value=', '.join(survey.tools) if survey.tools else '')
+            ws.cell(row=row_idx, column=4, value=survey.job or '')
+            ws.cell(row=row_idx, column=5, value=survey.desires or '')
+        
+        # Auto-adjust column widths
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column].width = adjusted_width
+        
+        # Add statistics sheet
+        stats_ws = wb.create_sheet("Statistics")
+        stats_ws['A1'] = "Tool Usage Statistics"
+        stats_ws['A1'].font = Font(bold=True, size=14)
+        
+        # Calculate tool statistics
+        tool_count = {}
+        for survey in surveys:
+            if survey.tools:
+                for tool in survey.tools:
+                    tool_count[tool] = tool_count.get(tool, 0) + 1
+        
+        stats_ws['A3'] = "Tool"
+        stats_ws['B3'] = "Count"
+        stats_ws['C3'] = "Percentage"
+        for col in ['A3', 'B3', 'C3']:
+            stats_ws[col].font = Font(bold=True)
+            stats_ws[col].fill = header_fill
+            stats_ws[col].font = header_font
+        
+        total_surveys = len(surveys)
+        for idx, (tool, count) in enumerate(sorted(tool_count.items(), key=lambda x: x[1], reverse=True), 4):
+            stats_ws.cell(row=idx, column=1, value=tool)
+            stats_ws.cell(row=idx, column=2, value=count)
+            percentage = (count / total_surveys * 100) if total_surveys > 0 else 0
+            stats_ws.cell(row=idx, column=3, value=f"{percentage:.1f}%")
+        
+        # Save to BytesIO
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        from datetime import datetime
+        filename = f"planex_survey_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+    except ImportError:
+        return jsonify({'error': 'openpyxl library not installed. Run: pip install openpyxl'}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

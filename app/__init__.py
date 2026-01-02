@@ -28,7 +28,7 @@ def create_app(config_name=None):
     })
     
     # Register blueprints
-    from app.api import auth, users, tasks, workspaces, income, ai_integration, docs_export, account, content_api, feedback_api, team_api, notification_api
+    from app.api import auth, users, tasks, workspaces, income, ai_integration, docs_export, account, content_api, feedback_api, team_api, notification_api, subtask_api
     from app.routes.categories import categories_bp
     from app.routes.products import products_bp
     from app.routes.sales import sales_bp
@@ -46,6 +46,7 @@ def create_app(config_name=None):
     app.register_blueprint(feedback_api.bp, url_prefix='/api/feedback')
     app.register_blueprint(team_api.bp, url_prefix='/api/teams', strict_slashes=False)
     app.register_blueprint(notification_api.bp, url_prefix='/api/notifications')
+    app.register_blueprint(subtask_api.bp, url_prefix='/api')
     app.register_blueprint(categories_bp)
     app.register_blueprint(products_bp)
     app.register_blueprint(sales_bp)

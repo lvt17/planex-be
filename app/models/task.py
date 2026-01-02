@@ -30,6 +30,17 @@ class Task(db.Model):
     # Relationships
     images = db.relationship('ImageStore', backref='task', lazy='dynamic')
     incomes = db.relationship('OneIncome', backref='task', lazy='dynamic')
+    subtasks = db.relationship('Subtask', back_populates='task', lazy='dynamic', cascade='all, delete-orphan')
+    comments = db.relationship('TaskComment', back_populates='task', lazy='dynamic', cascade='all, delete-orphan')
+    
+    def calculate_progress(self):
+        """Calculate progress based on subtasks if they exist"""
+        subtask_list = self.subtasks.all()
+        if not subtask_list:
+            return self.state  # Use manual progress if no subtasks
+        
+        completed = sum(1 for s in subtask_list if s.is_completed)
+        return int((completed / len(subtask_list)) * 100) if subtask_list else 0
     
     def to_dict(self):
         return {
@@ -39,7 +50,7 @@ class Task(db.Model):
             'content': self.content,
             'deadline': self.deadline.isoformat() if self.deadline else None,
             'price': self.price,
-            'state': self.state,
+            'state': self.calculate_progress(),  # Auto-calculate from subtasks
             'is_done': self.is_done,
             'client_num': self.client_num,
             'client_mail': self.client_mail,
@@ -50,7 +61,9 @@ class Task(db.Model):
             'project_id': self.project_id,
             'creator_id': self.creator_id,
             'team_name': self.team.name if self.team else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'subtask_count': self.subtasks.count(),
+            'comment_count': self.comments.count()
         }
     
     def to_mcp_format(self):
