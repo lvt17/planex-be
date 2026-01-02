@@ -261,19 +261,25 @@ def generate_invite_link(team_id):
 @bp.route('/join/<token>', methods=['GET'])
 def get_invite_info(token):
     """Get team info from invite token (no auth required)"""
+    # Clean token from potential trailing slashes or whitespace (common on mobile apps)
+    token = token.strip().rstrip('/')
+    
     invite = TeamInvite.query.filter_by(invite_token=token, invite_type='link').first()
     
     if not invite:
-        return jsonify({'error': 'Invalid invite link'}), 404
+        return jsonify({'error': 'TOKEN_NOT_FOUND', 'message': 'Mã mời không tồn tại hoặc không hợp lệ'}), 404
     
-    now = get_now_vn().replace(tzinfo=None) # Strip timezone for comparison with naive DB datetime
+    now = get_now_vn().replace(tzinfo=None)
     
     if invite.expires_at and invite.expires_at < now:
-        return jsonify({'error': 'Invite link has expired'}), 410
+        return jsonify({
+            'error': 'TOKEN_EXPIRED', 
+            'message': f'Link mời đã hết hạn vào lúc {invite.expires_at.strftime("%H:%M %d/%m/%Y")}'
+        }), 410
     
     return jsonify({
         'team_id': invite.team_id,
-        'team_name': invite.team.name if invite.team else None,
+        'team_name': invite.team.name if invite.team else 'Team không tên',
         'valid': True
     })
 
@@ -284,10 +290,11 @@ def request_to_join(token):
     """Request to join a team via invite link"""
     user_id = int(get_jwt_identity())
     
+    token = token.strip().rstrip('/')
     invite = TeamInvite.query.filter_by(invite_token=token, invite_type='link').first()
     
     if not invite:
-        return jsonify({'error': 'Invalid invite link'}), 404
+        return jsonify({'error': 'TOKEN_NOT_FOUND', 'message': 'Mã mời không tồn tại'}), 404
     
     if invite.expires_at and invite.expires_at < get_now_vn().replace(tzinfo=None):
         return jsonify({'error': 'Invite link has expired'}), 410
