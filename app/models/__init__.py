@@ -6,11 +6,26 @@ from app.models.account import Account, AccountStore
 from app.models.payment import Payment, PaymentStore
 from app.models.income import OneIncome, TotalIncome
 from app.models.image import ImageStore
+from app.models.user_feedback import UserSurvey, BugReport
 from app.models.whiteboard import Whiteboard, WhiteboardElement
+from app.models.content import Document, Spreadsheet
+from app.models.category import Category
+from app.models.product import Product
+from app.models.sale import Sale
+from app.models.team import Team, TeamMembership, ChatMessage, TeamInvite
+from app.models.notification import Notification
+from app.models.member_rating import MemberRating
+from app.models.project import Project
 
 __all__ = [
     'User', 'Storage', 'Task', 'Workspace', 'WorkspaceManage',
     'Account', 'AccountStore', 'Payment', 'PaymentStore',
     'OneIncome', 'TotalIncome', 'ImageStore',
-    'Whiteboard', 'WhiteboardElement'
+    'Whiteboard', 'WhiteboardElement',
+    'Document', 'Spreadsheet',
+    'UserSurvey', 'BugReport',
+    'Category', 'Product', 'Sale',
+    'Team', 'TeamMembership', 'ChatMessage', 'TeamInvite',
+    'Notification', 'MemberRating', 'Project'
 ]
+

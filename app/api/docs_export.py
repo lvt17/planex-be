@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+from app.utils.timezone import get_now_vn
 import os
 import io
 from docx import Document
@@ -181,7 +182,7 @@ def create_gg_forms(task_id):
     })
 
 
-@bp.route('/whiteboard/create', methods=['POST'])
+@bp.route('/whiteboards', methods=['POST'])
 @jwt_required()
 def create_whiteboard():
     """Create a new whiteboard for the user"""
@@ -190,7 +191,7 @@ def create_whiteboard():
     
     whiteboard = Whiteboard(
         user_id=user_id,
-        name=data.get('name', f'Whiteboard_{datetime.utcnow().strftime("%Y%m%d_%H%M%S")}'),
+        name=data.get('name', f'Whiteboard_{get_now_vn().strftime("%Y%m%d_%H%M%S")}'),
         description=data.get('description', '')
     )
     
@@ -328,7 +329,7 @@ def delete_whiteboard_element(whiteboard_id, element_id):
     return jsonify({'message': 'Element deleted successfully'})
 
 
-@bp.route('/whiteboard/user', methods=['GET'])
+@bp.route('/whiteboards', methods=['GET'])
 @jwt_required()
 def get_user_whiteboards():
     """Get all whiteboards for the current user"""

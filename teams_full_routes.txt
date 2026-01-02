@@ -1,0 +1,21 @@
+teams.approve_request                  POST       /api/teams/<int:team_id>/requests/<int:request_id>/approve             
+teams.create_project_task              POST       /api/teams/<int:team_id>/projects/<int:project_id>/tasks               
+teams.create_team                      POST       /api/teams                                                             
+teams.create_team_task                 POST       /api/teams/<int:team_id>/tasks                                         
+teams.dissolve_team                    POST       /api/teams/<int:team_id>/dissolve                                      
+teams.generate_invite_link             POST       /api/teams/<int:team_id>/invite-link                                   
+teams.get_chat_messages                GET        /api/teams/<int:team_id>/chat                                          
+teams.get_invite_info                  GET        /api/teams/join/<token>                                                
+teams.get_member_ratings               GET        /api/teams/<int:team_id>/ratings                                       
+teams.get_team                         GET        /api/teams/<int:team_id>                                               
+teams.get_team_tasks                   GET        /api/teams/<int:team_id>/tasks                                         
+teams.handle_projects                  GET, POST  /api/teams/<int:team_id>/projects                                      
+teams.invite_member                    POST       /api/teams/<int:team_id>/invite                                        
+teams.leave_team                       POST       /api/teams/<int:team_id>/leave                                         
+teams.list_teams                       GET        /api/teams                                                             
+teams.rate_member                      POST       /api/teams/<int:team_id>/ratings/<int:member_id>                       
+teams.reject_request                   POST       /api/teams/<int:team_id>/requests/<int:request_id>/reject              
+teams.remove_member                    DELETE     /api/teams/<int:team_id>/members/<int:member_id>                       
+teams.request_to_join                  POST       /api/teams/join/<token>                                                
+teams.send_chat_message                POST       /api/teams/<int:team_id>/chat                                          
+teams.test_teams_bp                    GET        /api/teams/test                                                        

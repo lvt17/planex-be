@@ -1,6 +1,7 @@
 import json
 import uuid
 from datetime import datetime
+from app.utils.timezone import get_now_vn
 from app.extensions import db
 from app.models.storage import Storage
 
@@ -20,8 +21,8 @@ class WhiteboardService:
             'task_id': task_id,
             'user_id': user_id,
             'title': title,
-            'created_at': datetime.now().isoformat(),
-            'updated_at': datetime.now().isoformat(),
+            'created_at': get_now_vn().isoformat(),
+            'updated_at': get_now_vn().isoformat(),
             'elements': [],
             'connections': [],
             'background': '#ffffff'
@@ -40,7 +41,7 @@ class WhiteboardService:
             return None
         
         whiteboard = self.whiteboards[whiteboard_id]
-        whiteboard['updated_at'] = datetime.now().isoformat()
+        whiteboard['updated_at'] = get_now_vn().isoformat()
         
         if elements is not None:
             whiteboard['elements'] = elements
@@ -58,10 +59,10 @@ class WhiteboardService:
         
         whiteboard = self.whiteboards[whiteboard_id]
         element_data['id'] = str(uuid.uuid4())
-        element_data['created_at'] = datetime.now().isoformat()
+        element_data['created_at'] = get_now_vn().isoformat()
         
         whiteboard['elements'].append(element_data)
-        whiteboard['updated_at'] = datetime.now().isoformat()
+        whiteboard['updated_at'] = get_now_vn().isoformat()
         
         return element_data
     
@@ -72,7 +73,7 @@ class WhiteboardService:
         
         whiteboard = self.whiteboards[whiteboard_id]
         whiteboard['elements'] = [elem for elem in whiteboard['elements'] if elem['id'] != element_id]
-        whiteboard['updated_at'] = datetime.now().isoformat()
+        whiteboard['updated_at'] = get_now_vn().isoformat()
         
         return True
     
@@ -89,7 +90,7 @@ class WhiteboardService:
         return {
             'whiteboard_id': whiteboard_id,
             'export_format': 'image',
-            'export_time': datetime.now().isoformat(),
+            'export_time': get_now_vn().isoformat(),
             'url': f'/api/whiteboards/{whiteboard_id}/export'
         }
     

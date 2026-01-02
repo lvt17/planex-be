@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+from app.utils.timezone import get_now_vn
 from app.extensions import db
 
 
@@ -10,8 +11,8 @@ class Whiteboard(db.Model):
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
     data = db.Column(db.JSON)  # Store whiteboard elements as JSON
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_now_vn)
+    updated_at = db.Column(db.DateTime, onupdate=get_now_vn)
     
     # Relationships
     user = db.relationship('User', backref='whiteboards')
@@ -39,7 +40,7 @@ class WhiteboardElement(db.Model):
     position_y = db.Column(db.Float, default=0)
     width = db.Column(db.Float, default=100)
     height = db.Column(db.Float, default=50)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_now_vn)
     
     # Relationships
     whiteboard = db.relationship('Whiteboard', backref='elements')

@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+from app.utils.timezone import get_now_vn
 from app.extensions import db
 from app.models.task import Task
 
@@ -33,13 +34,13 @@ def ai_query_tasks():
         query = query.filter_by(is_done=False).filter(Task.state > 0)
     
     if deadline == 'today':
-        today = datetime.utcnow().date()
+        today = get_now_vn().date()
         query = query.filter(db.func.date(Task.deadline) == today)
     elif deadline == 'overdue':
-        query = query.filter(Task.deadline < datetime.utcnow(), Task.is_done == False)
+        query = query.filter(Task.deadline < get_now_vn(), Task.is_done == False)
     elif deadline == 'week':
         from datetime import timedelta
-        week_later = datetime.utcnow() + timedelta(days=7)
+        week_later = get_now_vn() + timedelta(days=7)
         query = query.filter(Task.deadline <= week_later, Task.is_done == False)
     
     if search:
@@ -145,7 +146,7 @@ def ai_get_context():
     overdue_tasks = Task.query.filter(
         Task.user_id == user_id,
         Task.is_done == False,
-        Task.deadline < datetime.utcnow()
+        Task.deadline < get_now_vn()
     ).limit(5).all()
     
     # Get recently created tasks

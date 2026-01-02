@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+from app.utils.timezone import get_now_vn
 from app.extensions import db
 
 
@@ -10,13 +11,15 @@ class Account(db.Model):
     username = db.Column(db.String(100), nullable=False)
     password = db.Column(db.String(255), nullable=False)
     noted = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    content = db.Column(db.Text) # For 2FA/Sensitive notes
+    created_at = db.Column(db.DateTime, default=get_now_vn)
     
     def to_dict(self):
         return {
             'id': self.id,
             'platform': self.platform,
             'username': self.username,
+            'content': self.content, # Encrypted in DB, decrypted on request
             'noted': self.noted,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }

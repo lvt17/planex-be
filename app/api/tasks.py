@@ -1,8 +1,12 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+from app.utils.timezone import get_now_vn
 from app.extensions import db
 from app.models.task import Task
+from app.models.user import User
+from app.models.team import Team
+from app.models.notification import Notification
 from app.events import task_created, task_completed
 
 bp = Blueprint('tasks', __name__)
@@ -31,10 +35,10 @@ def get_tasks():
         query = query.filter_by(is_done=False).filter(Task.state > 0)
     
     if deadline == 'today':
-        today = datetime.utcnow().date()
+        today = get_now_vn().date()
         query = query.filter(db.func.date(Task.deadline) == today)
     elif deadline == 'overdue':
-        query = query.filter(Task.deadline < datetime.utcnow(), Task.is_done == False)
+        query = query.filter(Task.deadline < get_now_vn(), Task.is_done == False)
     
     # Order by deadline
     query = query.order_by(Task.deadline.asc().nullslast())
@@ -107,12 +111,41 @@ def update_task(id):
     if 'price' in data:
         task.price = data['price']
     if 'state' in data:
-        task.state = data['state']
+        old_state = task.state or 0
+        new_state = data['state']
+        task.state = new_state
+        # Notify leader when progress changes (for team tasks)
+        if task.team_id and task.creator_id and task.creator_id != task.user_id:
+            if new_state != old_state:
+                assignee = User.query.get(task.user_id)
+                team = Team.query.get(task.team_id)
+                notification = Notification(
+                    user_id=task.creator_id,
+                    type='task_progress_update',
+                    title='Cập nhật tiến độ task',
+                    message=f'{assignee.username} đã cập nhật tiến độ task "{task.name}" lên {new_state}% trong team "{team.name}".',
+                    action_type='view_team_task',
+                    action_data={'team_id': task.team_id, 'task_id': task.id, 'progress': new_state}
+                )
+                db.session.add(notification)
     if 'is_done' in data:
         was_done = task.is_done
         task.is_done = data['is_done']
         if not was_done and task.is_done:
             task_completed.send(task)
+            # If this is an assigned team task, notify the creator (leader)
+            if task.team_id and task.creator_id and task.creator_id != task.user_id:
+                assignee = User.query.get(task.user_id)
+                team = Team.query.get(task.team_id)
+                notification = Notification(
+                    user_id=task.creator_id,
+                    type='task_completed',
+                    title='Công việc đã hoàn thành',
+                    message=f'Thành viên {assignee.username} đã hoàn thành task "{task.name}" trong team "{team.name}".',
+                    action_type='view_team_task',
+                    action_data={'team_id': task.team_id, 'task_id': task.id}
+                )
+                db.session.add(notification)
     if 'client_num' in data:
         task.client_num = data['client_num']
     if 'client_mail' in data:
