@@ -203,11 +203,18 @@ def export_surveys():
         surveys = UserSurvey.query.all()
         for row_idx, survey in enumerate(surveys, 2):
             user = User.query.get(survey.user_id)
+            
+            # Set values
             ws.cell(row=row_idx, column=1, value=user.username if user else 'Unknown')
             ws.cell(row=row_idx, column=2, value=user.email if user else 'Unknown')
             ws.cell(row=row_idx, column=3, value=', '.join(survey.tools) if survey.tools else '')
             ws.cell(row=row_idx, column=4, value=survey.job or '')
             ws.cell(row=row_idx, column=5, value=survey.desires or '')
+            
+            # Apply wrap text to all cells in this row
+            for col in range(1, 6):
+                cell = ws.cell(row=row_idx, column=col)
+                cell.alignment = Alignment(wrap_text=True, vertical='top')
         
         # Auto-adjust column widths
         for col in ws.columns:
