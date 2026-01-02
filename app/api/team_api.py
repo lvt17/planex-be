@@ -349,6 +349,18 @@ def approve_request(team_id, request_id):
     if join_request.status != 'pending':
         return jsonify({'error': 'Request already processed'}), 400
     
+    # Check if user is already a member (idempotency check)
+    existing_membership = TeamMembership.query.filter_by(
+        team_id=team_id, 
+        user_id=join_request.user_id
+    ).first()
+    
+    if existing_membership:
+        # If already a member, just mark the request as approved and return success
+        join_request.status = 'approved'
+        db.session.commit()
+        return jsonify({'message': 'User is already a member. Request marked as approved.'})
+
     # Add member
     new_member = TeamMembership(
         team_id=team_id,
