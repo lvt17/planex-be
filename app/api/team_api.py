@@ -266,7 +266,9 @@ def get_invite_info(token):
     if not invite:
         return jsonify({'error': 'Invalid invite link'}), 404
     
-    if invite.expires_at and invite.expires_at < get_now_vn():
+    now = get_now_vn().replace(tzinfo=None) # Strip timezone for comparison with naive DB datetime
+    
+    if invite.expires_at and invite.expires_at < now:
         return jsonify({'error': 'Invite link has expired'}), 410
     
     return jsonify({
@@ -287,7 +289,7 @@ def request_to_join(token):
     if not invite:
         return jsonify({'error': 'Invalid invite link'}), 404
     
-    if invite.expires_at and invite.expires_at < get_now_vn():
+    if invite.expires_at and invite.expires_at < get_now_vn().replace(tzinfo=None):
         return jsonify({'error': 'Invite link has expired'}), 410
     
     team_id = invite.team_id
