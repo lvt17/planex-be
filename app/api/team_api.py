@@ -297,7 +297,10 @@ def request_to_join(token):
         return jsonify({'error': 'TOKEN_NOT_FOUND', 'message': 'Mã mời không tồn tại'}), 404
     
     if invite.expires_at and invite.expires_at < get_now_vn().replace(tzinfo=None):
-        return jsonify({'error': 'Invite link has expired'}), 410
+        return jsonify({
+            'error': 'TOKEN_EXPIRED', 
+            'message': f'Link mời đã hết hạn vào lúc {invite.expires_at.strftime("%H:%M %d/%m/%Y")}'
+        }), 410
     
     team_id = invite.team_id
     
