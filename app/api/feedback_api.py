@@ -178,11 +178,54 @@ def delete_user(user_id):
     user = User.query.get(user_id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
+    
+    try:
+        # Import models needed for cascade delete
+        from app.models.task import Task
+        from app.models.project import Project
+        from app.models.team import Team, TeamMembership, ChatMessage, TeamInvite
+        from app.models.income import OneIncome, TotalIncome
+        from app.models.subtask import Subtask, TaskComment
+        from app.models.notification import Notification
+        from app.models.member_rating import MemberRating
         
-    # Delete user and fallback to cascade if configured, but let's be safe
-    db.session.delete(user)
-    db.session.commit()
-    return jsonify({'message': 'User deleted permanently'})
+        # Delete all related data manually to avoid constraint errors
+        # 1. Delete tasks created by or owned by this user
+        Task.query.filter((Task.user_id == user_id) | (Task.creator_id == user_id)).delete()
+        
+        # 2. Delete projects owned by this user
+        Project.query.filter_by(user_id=user_id).delete()
+        
+        # 3. Delete team memberships
+        TeamMembership.query.filter_by(user_id=user_id).delete()
+        
+        # 4. Delete teams owned by this user
+        Team.query.filter_by(owner_id=user_id).delete()
+        
+        # 5. Delete chat messages
+        ChatMessage.query.filter_by(user_id=user_id).delete()
+        
+        # 6. Delete team invites
+        TeamInvite.query.filter_by(user_id=user_id).delete()
+        
+        # 7. Delete income records
+        OneIncome.query.filter_by(user_id=user_id).delete()
+        TotalIncome.query.filter_by(user_id=user_id).delete()
+        
+        # 8. Delete notifications
+        Notification.query.filter_by(user_id=user_id).delete()
+        
+        # 9. Delete member ratings (given and received)
+        MemberRating.query.filter((MemberRating.member_id == user_id) | (MemberRating.rater_id == user_id)).delete()
+        
+        # 10. Finally delete the user
+        db.session.delete(user)
+        db.session.commit()
+        
+        return jsonify({'message': 'User and all related data deleted permanently'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to delete user: {str(e)}'}), 500
 
 
 @bp.route('/admin/surveys/export', methods=['GET'])
