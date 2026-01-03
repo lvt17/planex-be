@@ -2,8 +2,8 @@
 SSE (Server-Sent Events) API endpoints
 Provides real-time event streaming to clients
 """
-from flask import Blueprint, request, Response
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask import Blueprint, request, Response, jsonify
+from flask_jwt_extended import decode_token
 from app.services.sse_manager import sse_manager
 import time
 import uuid
@@ -11,15 +11,29 @@ import uuid
 bp = Blueprint('sse', __name__)
 
 
-@bp.route('/events/stream', methods=['GET'])
-@jwt_required(optional=True)
+@bp.route('/events/stream', methods=['GET', 'OPTIONS'])
 def event_stream():
     """
     SSE endpoint for clients to receive real-time updates
     Clients connect to this endpoint and receive events as they happen
     """
-    # Get user identity if authenticated
-    user_id = get_jwt_identity()
+    # Handle CORS preflight
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        return response
+    
+    # Get user identity from token in query params or header
+    user_id = None
+    try:
+        token = request.args.get('token') or request.headers.get('Authorization', '').replace('Bearer ', '')
+        if token:
+            decoded = decode_token(token)
+            user_id = decoded.get('sub')
+    except:
+        pass  # Anonymous connection is OK
     
     # Generate unique client ID
     client_id = f"{user_id or 'anonymous'}_{uuid.uuid4().hex[:8]}"
@@ -47,21 +61,23 @@ def event_stream():
             sse_manager.remove_client(client_id)
     
     # Return SSE response with proper headers
-    return Response(
+    response = Response(
         generate(),
         mimetype='text/event-stream',
         headers={
-            'Cache-Control': 'no-cache',
-            'X-Accel-Buffering': 'no',  # Disable nginx buffering
-            'Connection': 'keep-alive'
+            'Cache-Control': 'no-cache, no-transform',
+            'X-Accel-Buffering': 'no',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true'
         }
     )
+    return response
 
 
 @bp.route('/events/stats', methods=['GET'])
-@jwt_required()
 def get_stats():
-    """Get SSE connection statistics (admin only)"""
-    return {
+    """Get SSE connection statistics"""
+    return jsonify({
         'connected_clients': sse_manager.get_client_count()
-    }
+    })
