@@ -7,6 +7,7 @@ from app.models.task import Task
 from app.models.project import Project
 from app.models.notification import Notification
 from app.utils.timezone import get_now_vn
+from app.services.sse_manager import sse_manager
 import secrets
 import os
 from datetime import datetime, timedelta, timezone
@@ -574,6 +575,9 @@ def send_chat_message(team_id):
     db.session.add(message)
     db.session.commit()
     
+    # Broadcast SSE event for realtime chat
+    sse_manager.broadcast('chat_message', message.to_dict())
+    
     return jsonify(message.to_dict()), 201
 
 
@@ -620,6 +624,9 @@ def send_chat_image(team_id):
     )
     db.session.add(message)
     db.session.commit()
+    
+    # Broadcast SSE event for realtime chat
+    sse_manager.broadcast('chat_message', message.to_dict())
     
     return jsonify(message.to_dict()), 201
 
