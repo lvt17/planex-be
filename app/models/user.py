@@ -60,15 +60,17 @@ class User(db.Model):
     
     @property
     def title(self):
-        """User title based on activity/role"""
-        if self.email == 'lieutoan7788a@gmail.com':
-            return 'Trùm Planex'
+        """User title based on new rules"""
+        if self.email in ['lieutoan7788a@gmail.com', 'Vtoanhihihi@gmail.com']:
+            return 'Planex Ghost'
         count = self.access_count or 0
-        if count > 50:
-            return 'Planex-er'
-        if count > 20:
-            return 'Thành viên gắn kết'
-        return 'Người dùng mới'
+        if count >= 1000:
+            return 'Planex Legend'
+        if count >= 100:
+            return 'Planex Master'
+        if count >= 10:
+            return 'Planex Citizen'
+        return 'Planex Newbie'
     
     def to_dict(self):
         return {
