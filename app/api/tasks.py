@@ -9,6 +9,7 @@ from app.models.team import Team
 from app.models.notification import Notification
 from app.events import task_created, task_completed
 from app.services.sse_manager import sse_manager
+from sqlalchemy.orm import joinedload
 
 bp = Blueprint('tasks', __name__)
 
@@ -48,6 +49,12 @@ def get_tasks():
         query = query.filter(db.func.date(Task.deadline) == today)
     elif deadline == 'overdue':
         query = query.filter(Task.deadline < get_now_vn()).filter(Task.is_done == False)
+    
+    # PERFORMANCE: Eager load subtasks and comments to prevent N+1 queries
+    query = query.options(
+        joinedload(Task.subtasks),
+        joinedload(Task.comments)
+    )
     
     # Order by deadline
     query = query.order_by(Task.deadline.asc().nullslast())

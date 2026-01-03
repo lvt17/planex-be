@@ -1,6 +1,7 @@
 """
 SSE (Server-Sent Events) Manager Service
 Handles broadcasting events to all connected clients in real-time
+TEMPORARILY DISABLED due to worker timeout issues
 """
 import time
 import json
@@ -17,9 +18,13 @@ class SSEManager:
         # Store active client queues
         self.clients: Dict[str, queue.Queue] = {}
         self.lock = threading.Lock()
+        self.enabled = False  # TEMPORARILY DISABLED
     
     def add_client(self, client_id: str) -> queue.Queue:
         """Register a new SSE client"""
+        if not self.enabled:
+            return queue.Queue(maxsize=1)  # Dummy queue
+            
         with self.lock:
             client_queue = queue.Queue(maxsize=100)
             self.clients[client_id] = client_queue
@@ -28,13 +33,19 @@ class SSEManager:
     
     def remove_client(self, client_id: str):
         """Remove a disconnected SSE client"""
+        if not self.enabled:
+            return
+            
         with self.lock:
             if client_id in self.clients:
                 del self.clients[client_id]
                 print(f"SSE: Client {client_id} disconnected. Total clients: {len(self.clients)}")
     
     def broadcast(self, event_type: str, data: Any):
-        """Broadcast an event to all connected clients"""
+        """Broadcast an event to all connected clients - TEMPORARILY DISABLED"""
+        if not self.enabled:
+            return  # No-op when disabled
+            
         event_data = {
             'type': event_type,
             'data': data,
@@ -62,7 +73,10 @@ class SSEManager:
         print(f"SSE: Broadcasted {event_type} to {len(self.clients)} clients")
     
     def send_to_client(self, client_id: str, event_type: str, data: Any):
-        """Send an event to a specific client"""
+        """Send an event to a specific client - TEMPORARILY DISABLED"""
+        if not self.enabled:
+            return
+            
         event_data = {
             'type': event_type,
             'data': data,
