@@ -30,8 +30,8 @@ class Task(db.Model):
     # Relationships
     images = db.relationship('ImageStore', backref='task', lazy='dynamic')
     incomes = db.relationship('OneIncome', backref='task', lazy='dynamic')
-    subtasks = db.relationship('Subtask', back_populates='task', lazy='dynamic', cascade='all, delete-orphan')
-    comments = db.relationship('TaskComment', back_populates='task', lazy='dynamic', cascade='all, delete-orphan')
+    subtasks = db.relationship('Subtask', back_populates='task', cascade='all, delete-orphan')
+    comments = db.relationship('TaskComment', back_populates='task', cascade='all, delete-orphan')
     
     def calculate_progress(self):
         """Calculate progress based on subtasks if they exist"""
@@ -66,17 +66,17 @@ class Task(db.Model):
         
         # Include subtasks and comments if requested (default: True)
         if include_relations:
-            # Get subtasks as list (already loaded via joinedload)
-            subtasks_list = list(self.subtasks)
-            comments_list = list(self.comments)
+            # Use the already loaded relationships
+            subtasks_list = self.subtasks
+            comments_list = self.comments
             
             base_dict['subtasks'] = [s.to_dict() for s in subtasks_list]
             base_dict['comments'] = [c.to_dict() for c in comments_list]
             base_dict['subtask_count'] = len(subtasks_list)
             base_dict['comment_count'] = len(comments_list)
         else:
-            base_dict['subtask_count'] = self.subtasks.count()
-            base_dict['comment_count'] = self.comments.count()
+            base_dict['subtask_count'] = len(self.subtasks)
+            base_dict['comment_count'] = len(self.comments)
         
         return base_dict
     

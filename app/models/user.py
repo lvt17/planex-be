@@ -58,6 +58,18 @@ class User(db.Model):
             now = now.replace(tzinfo=locked_until.tzinfo)
         return locked_until > now
     
+    @property
+    def title(self):
+        """User title based on activity/role"""
+        if self.email == 'lieutoan7788a@gmail.com':
+            return 'Trùm Planex'
+        count = self.access_count or 0
+        if count > 50:
+            return 'Planex-er'
+        if count > 20:
+            return 'Thành viên gắn kết'
+        return 'Người dùng mới'
+    
     def to_dict(self):
         return {
             'id': self.id,
@@ -67,5 +79,7 @@ class User(db.Model):
             'avatar_url': self.storage.avt_url if self.storage else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'locked_until': self.locked_until.isoformat() if self.locked_until else None,
-            'is_locked': self.is_locked
+            'is_locked': self.is_locked,
+            'access_count': self.access_count or 0,
+            'title': self.title
         }
