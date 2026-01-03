@@ -133,14 +133,16 @@ def check_task_notifications(user_id):
             days_until = (deadline_date - today).days
             
             if 0 <= days_until <= 1:
-                # Check if notification already exists
+                # PERFORMANCE: Avoid direct JSON comparison in query for PostgreSQL compatibility
                 existing = Notification.query.filter_by(
                     user_id=user_id,
-                    type='task_deadline',
-                    action_data={'task_id': task.id}
-                ).filter(Notification.created_at > now - timedelta(hours=12)).first()
+                    type='task_deadline'
+                ).filter(Notification.created_at > now - timedelta(hours=12)).all()
                 
-                if not existing:
+                # Manual check in Python
+                is_duplicate = any(n.action_data.get('task_id') == task.id for n in existing if n.action_data)
+                
+                if not is_duplicate:
                     notif = Notification(
                         user_id=user_id,
                         type='task_deadline',
@@ -163,13 +165,16 @@ def check_task_notifications(user_id):
             
             days_old = (now_for_compare - task_created).days
             if days_old >= 2 and task.state < 50:
+                # PERFORMANCE: Avoid direct JSON comparison in query for PostgreSQL compatibility
                 existing = Notification.query.filter_by(
                     user_id=user_id,
-                    type='task_stale',
-                    action_data={'task_id': task.id}
-                ).filter(Notification.created_at > now - timedelta(days=1)).first()
+                    type='task_stale'
+                ).filter(Notification.created_at > now - timedelta(days=1)).all()
                 
-                if not existing:
+                # Manual check in Python
+                is_duplicate = any(n.action_data.get('task_id') == task.id for n in existing if n.action_data)
+                
+                if not is_duplicate:
                     notif = Notification(
                         user_id=user_id,
                         type='task_stale',
