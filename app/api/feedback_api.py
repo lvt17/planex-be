@@ -4,6 +4,7 @@ from app.extensions import db
 from app.models.user_feedback import UserSurvey, BugReport
 from app.models.user import User
 from werkzeug.security import check_password_hash, generate_password_hash
+from app.services.sse_manager import sse_manager
 import os
 
 bp = Blueprint('feedback', __name__)
@@ -30,6 +31,9 @@ def submit_survey():
     db.session.add(survey)
     db.session.commit()
     
+    # Broadcast SSE event
+    sse_manager.broadcast('survey_submitted', survey.to_dict())
+    
     return jsonify({'message': 'Survey submitted successfully'}), 201
 
 @bp.route('/survey/check', methods=['GET'])
@@ -55,6 +59,9 @@ def submit_report():
     )
     db.session.add(report)
     db.session.commit()
+    
+    # Broadcast SSE event
+    sse_manager.broadcast('report_submitted', report.to_dict())
     
     return jsonify({'message': 'Bug report submitted successfully'}), 201
 
@@ -153,6 +160,10 @@ def lock_user(user_id):
         return jsonify({'error': 'Invalid duration'}), 400
         
     db.session.commit()
+    
+    # Broadcast SSE event
+    sse_manager.broadcast('user_updated', user.to_dict())
+    
     return jsonify({'message': f'User locked until {user.locked_until.isoformat()}', 'user': user.to_dict()})
 
 @bp.route('/admin/users/<int:user_id>/unlock', methods=['POST'])
@@ -167,6 +178,10 @@ def unlock_user(user_id):
         
     user.locked_until = None
     db.session.commit()
+    
+    # Broadcast SSE event
+    sse_manager.broadcast('user_updated', user.to_dict())
+    
     return jsonify({'message': 'User unlocked', 'user': user.to_dict()})
 
 @bp.route('/admin/users/<int:user_id>', methods=['DELETE'])
@@ -221,6 +236,9 @@ def delete_user(user_id):
         # 10. Finally delete the user
         db.session.delete(user)
         db.session.commit()
+        
+        # Broadcast SSE event
+        sse_manager.broadcast('user_deleted', {'id': user_id})
         
         return jsonify({'message': 'User and all related data deleted permanently'})
     except Exception as e:
