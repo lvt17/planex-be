@@ -18,7 +18,7 @@ class SSEManager:
         # Store active client queues
         self.clients: Dict[str, queue.Queue] = {}
         self.lock = threading.Lock()
-        self.enabled = False  # TEMPORARILY DISABLED
+        self.enabled = True  # RE-ENABLED
     
     def add_client(self, client_id: str) -> queue.Queue:
         """Register a new SSE client"""
