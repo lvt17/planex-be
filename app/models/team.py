@@ -53,6 +53,7 @@ class TeamMembership(db.Model):
             'full_name': self.user.full_name if self.user else None,
             'email': self.user.email if self.user else None,
             'avatar_url': self.user.storage.avt_url if self.user and self.user.storage else None,
+            'title': self.user.title if self.user else None,
             'role': self.role,
             'joined_at': self.joined_at.isoformat() if self.joined_at else None
         }
@@ -79,6 +80,7 @@ class ChatMessage(db.Model):
             'username': self.user.username if self.user else None,
             'full_name': self.user.full_name if self.user else None,
             'avatar_url': self.user.storage.avt_url if self.user and self.user.storage else None,
+            'title': self.user.title if self.user else None,
             'content': self.content,
             'image_url': self.image_url,
             'created_at': self.created_at.isoformat() if self.created_at else None

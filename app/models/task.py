@@ -35,7 +35,7 @@ class Task(db.Model):
     
     def calculate_progress(self):
         """Calculate progress based on subtasks if they exist"""
-        subtask_list = self.subtasks.all()
+        subtask_list = self.subtasks
         if not subtask_list:
             return self.state  # Use manual progress if no subtasks
         

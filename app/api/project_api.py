@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.extensions import db
+from sqlalchemy.orm import joinedload
 from app.models.project import Project
 from app.models.task import Task
 
@@ -11,7 +12,7 @@ project_bp = Blueprint('project', __name__)
 @jwt_required()
 def get_projects():
     """Get all personal projects for the current user"""
-    from sqlalchemy.orm import joinedload
+    user_id = get_jwt_identity()
     projects = Project.query.options(
         joinedload(Project.team)
     ).filter_by(user_id=user_id).order_by(Project.created_at.desc()).all()
