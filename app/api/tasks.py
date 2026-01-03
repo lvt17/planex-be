@@ -8,6 +8,7 @@ from app.models.user import User
 from app.models.team import Team
 from app.models.notification import Notification
 from app.events import task_created, task_completed
+from app.services.sse_manager import sse_manager
 
 bp = Blueprint('tasks', __name__)
 
@@ -90,6 +91,9 @@ def create_task():
     # Emit event
     task_created.send(task)
     
+    # Broadcast SSE event
+    sse_manager.broadcast('task_created', task.to_dict())
+    
     return jsonify(task.to_dict()), 201
 
 
@@ -166,6 +170,9 @@ def update_task(id):
     
     db.session.commit()
     
+    # Broadcast SSE event
+    sse_manager.broadcast('task_updated', task.to_dict())
+    
     return jsonify(task.to_dict())
 
 
@@ -176,7 +183,11 @@ def delete_task(id):
     user_id = get_jwt_identity()
     task = Task.query.filter_by(id=id, user_id=user_id).first_or_404()
     
+    task_id = task.id
     db.session.delete(task)
     db.session.commit()
+    
+    # Broadcast SSE event
+    sse_manager.broadcast('task_deleted', {'id': task_id})
     
     return jsonify({'message': 'Task deleted successfully'})
