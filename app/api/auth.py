@@ -185,6 +185,9 @@ def login():
             'error': f'Tài khoản của bạn đã bị khoá cho đến {unlock_time}. Vui lòng liên hệ quản trị viên để biết thêm chi tiết.'
         }), 403
         
+    user.access_count = (user.access_count or 0) + 1
+    db.session.commit()
+    
     access_token = create_access_token(identity=str(user.id))
     
     return jsonify({
@@ -345,6 +348,10 @@ def google_login():
             
             db.session.add(user)
             db.session.commit()
+        
+        # Increment access count
+        user.access_count = (user.access_count or 0) + 1
+        db.session.commit()
         
         # Create JWT token
         access_token = create_access_token(identity=str(user.id))

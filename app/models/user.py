@@ -20,6 +20,7 @@ class User(db.Model):
     otp_code = db.Column(db.String(6))
     otp_expiry = db.Column(db.DateTime)
     locked_until = db.Column(db.DateTime, nullable=True)
+    access_count = db.Column(db.Integer, default=0)
     
     # Relationships
     storage = db.relationship('Storage', backref='user', foreign_keys=[storage_id])

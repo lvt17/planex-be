@@ -110,6 +110,22 @@ def get_users():
     users = User.query.all()
     return jsonify([u.to_dict() for u in users])
 
+@bp.route('/admin/ranking', methods=['GET'])
+def get_user_ranking():
+    token = request.headers.get('X-Admin-Token')
+    if token != 'secret-admin-token-2026':
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    # Get top 50 users sorted by access_count descending
+    users = User.query.order_by(User.access_count.desc()).limit(50).all()
+    results = []
+    for u in users:
+        d = u.to_dict()
+        d['access_count'] = u.access_count or 0
+        results.append(d)
+        
+    return jsonify(results)
+
 @bp.route('/admin/users/<int:user_id>/lock', methods=['POST'])
 def lock_user(user_id):
     token = request.headers.get('X-Admin-Token')
