@@ -39,7 +39,7 @@ def get_tasks():
     if status == 'done':
         query = query.filter_by(is_done=True)
     elif status == 'pending':
-        query = query.filter_by(is_done=False).filter(Task.state == 0)
+        query = query.filter_by(is_done=False).filter((Task.state == None) | (Task.state == 0))
     elif status == 'in_progress':
         query = query.filter_by(is_done=False).filter(Task.state > 0)
     
@@ -47,7 +47,7 @@ def get_tasks():
         today = get_now_vn().date()
         query = query.filter(db.func.date(Task.deadline) == today)
     elif deadline == 'overdue':
-        query = query.filter(Task.deadline < get_now_vn(), Task.is_done == False)
+        query = query.filter(Task.deadline < get_now_vn()).filter(Task.is_done == False)
     
     # Order by deadline
     query = query.order_by(Task.deadline.asc().nullslast())
