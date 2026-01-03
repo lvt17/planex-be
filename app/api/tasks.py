@@ -21,10 +21,18 @@ def get_tasks():
     # Query params
     status = request.args.get('status')  # pending, in_progress, done
     deadline = request.args.get('deadline')  # today, week, overdue
+    project_id = request.args.get('project_id', type=int)  # Filter by project
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
     
     query = Task.query.filter_by(user_id=user_id)
+    
+    # Filter by project
+    if project_id is not None:
+        if project_id == 0:  # Special case: tasks with no project
+            query = query.filter(Task.project_id.is_(None))
+        else:
+            query = query.filter_by(project_id=project_id)
     
     # Apply filters
     if status == 'done':
@@ -72,7 +80,8 @@ def create_task():
         price=data.get('price', 0),
         client_num=data.get('client_num'),
         client_mail=data.get('client_mail'),
-        noted=data.get('noted')
+        noted=data.get('noted'),
+        project_id=data.get('project_id')  # Assign to project
     )
     
     db.session.add(task)
@@ -152,6 +161,8 @@ def update_task(id):
         task.client_mail = data['client_mail']
     if 'noted' in data:
         task.noted = data['noted']
+    if 'project_id' in data:
+        task.project_id = data['project_id'] if data['project_id'] else None
     
     db.session.commit()
     
