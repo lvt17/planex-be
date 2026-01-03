@@ -12,6 +12,7 @@ import secrets
 import os
 from datetime import datetime, timedelta, timezone
 from app.services.mail_service import send_task_assignment_email, start_background_email
+from sqlalchemy.orm import joinedload
 
 bp = Blueprint('teams', __name__)
 
@@ -47,7 +48,11 @@ def create_team():
 def list_teams():
     """List all teams the user belongs to"""
     user_id = int(get_jwt_identity())
-    memberships = TeamMembership.query.filter_by(user_id=user_id).all()
+    # PERFORMANCE: Eager load team and owner to avoid N+1 queries
+    memberships = TeamMembership.query.options(
+        joinedload(TeamMembership.team).joinedload(Team.owner)
+    ).filter_by(user_id=user_id).all()
+    
     teams = [m.team.to_dict() for m in memberships if m.team]
     return jsonify(teams)
 
@@ -63,8 +68,13 @@ def get_team(team_id):
     if not membership:
         return jsonify({'error': 'Not a member of this team'}), 403
     
-    team = Team.query.get_or_404(team_id)
-    members = [m.to_dict() for m in team.members.all()]
+    # PERFORMANCE: Eager load team, owner, and members with user profiles
+    team = Team.query.options(
+        joinedload(Team.owner),
+        joinedload(Team.members).joinedload(TeamMembership.user).joinedload(User.storage)
+    ).get_or_404(team_id)
+    
+    members = [m.to_dict() for m in team.members]
     
     # Get pending requests for owner/admin
     pending_requests = []
@@ -541,7 +551,9 @@ def get_chat_messages(team_id):
     # Get last 50 messages by default, or use 'after' param for polling
     after_id = request.args.get('after', type=int)
     
-    query = ChatMessage.query.filter_by(team_id=team_id)
+    query = ChatMessage.query.options(
+        joinedload(ChatMessage.user).joinedload(User.storage)
+    ).filter_by(team_id=team_id)
     if after_id:
         query = query.filter(ChatMessage.id > after_id)
     

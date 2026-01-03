@@ -11,9 +11,10 @@ project_bp = Blueprint('project', __name__)
 @jwt_required()
 def get_projects():
     """Get all personal projects for the current user"""
-    user_id = get_jwt_identity()
-    
-    projects = Project.query.filter_by(user_id=user_id).order_by(Project.created_at.desc()).all()
+    from sqlalchemy.orm import joinedload
+    projects = Project.query.options(
+        joinedload(Project.team)
+    ).filter_by(user_id=user_id).order_by(Project.created_at.desc()).all()
     
     return jsonify([p.to_dict() for p in projects]), 200
 
