@@ -42,8 +42,8 @@ class Task(db.Model):
         completed = sum(1 for s in subtask_list if s.is_completed)
         return int((completed / len(subtask_list)) * 100) if subtask_list else 0
     
-    def to_dict(self):
-        return {
+    def to_dict(self, include_relations=True):
+        base_dict = {
             'id': self.id,
             'user_id': self.user_id,
             'name': self.name,
@@ -62,9 +62,23 @@ class Task(db.Model):
             'creator_id': self.creator_id,
             'team_name': self.team.name if self.team else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'subtask_count': self.subtasks.count(),
-            'comment_count': self.comments.count()
         }
+        
+        # Include subtasks and comments if requested (default: True)
+        if include_relations:
+            # Get subtasks as list (already loaded via joinedload)
+            subtasks_list = list(self.subtasks)
+            comments_list = list(self.comments)
+            
+            base_dict['subtasks'] = [s.to_dict() for s in subtasks_list]
+            base_dict['comments'] = [c.to_dict() for c in comments_list]
+            base_dict['subtask_count'] = len(subtasks_list)
+            base_dict['comment_count'] = len(comments_list)
+        else:
+            base_dict['subtask_count'] = self.subtasks.count()
+            base_dict['comment_count'] = self.comments.count()
+        
+        return base_dict
     
     def to_mcp_format(self):
         """Format for AI/MCP integration"""
