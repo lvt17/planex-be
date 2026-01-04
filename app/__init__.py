@@ -16,14 +16,15 @@ def create_app(config_name=None):
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
-    # CORS setup
+    # CORS setup - temporarily allow all for debugging
     cors.init_app(app, resources={
         r"/api/*": {
-            "origins": app.config['ALLOWED_ORIGINS'],
+            "origins": "*",  # Allow all origins temporarily
             "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization", "X-Admin-Token"],
-            "supports_credentials": True,
-            "expose_headers": ["Content-Type", "Authorization"]
+            "supports_credentials": False,  # Must be False when using "*"
+            "expose_headers": ["Content-Type", "Authorization"],
+            "max_age": 3600
         }
     })
     
