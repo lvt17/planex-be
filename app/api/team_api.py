@@ -431,7 +431,12 @@ def handle_projects(team_id):
         data = request.get_json()
         if not data.get('name'):
             return jsonify({'error': 'Project name is required'}), 400
-        project = Project(name=data['name'], team_id=team_id)
+        # Team project: has team_id, NO user_id
+        project = Project(
+            name=data['name'], 
+            team_id=team_id,
+            user_id=None  # Team projects don't belong to individual users
+        )
         db.session.add(project)
         db.session.commit()
         return jsonify(project.to_dict()), 201
