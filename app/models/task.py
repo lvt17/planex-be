@@ -63,6 +63,7 @@ class Task(db.Model):
             'creator_id': self.creator_id,
             'team_name': self.team.name if self.team else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
         }
         
         # Include subtasks and comments if requested (default: True)
