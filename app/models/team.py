@@ -82,9 +82,9 @@ class ChatMessage(db.Model):
     user = db.relationship('User', back_populates='chat_messages')
     
     def to_dict(self):
-        # Get badges safely
+        # Get team-specific badges instead of global badges
         try:
-            user_badges = self.user.badges if self.user else []
+            user_badges = self.user.get_team_badges(self.team_id) if self.user else []
         except Exception as e:
             import logging
             logging.error(f"ChatMessage.to_dict badges error for user {self.user_id}: {e}")

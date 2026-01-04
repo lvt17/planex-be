@@ -170,6 +170,32 @@ class User(db.Model):
                     results.append('Planex Newbie')
                     
         return results if results else ['Planex Newbie']
+    
+    def get_team_badges(self, team_id):
+        """Get only team-relevant badges for a specific team"""
+        badges = []
+        try:
+            # 1. Leader Badge (if owns this team)
+            from app.models.team import Team
+            team = Team.query.get(team_id)
+            if team and team.owner_id == self.id:
+                badges.append('Planex Leader')
+            
+            # 2. Best Member Badge (highest access_count in THIS team)
+            from app.models.team import TeamMembership
+            membership = TeamMembership.query.filter_by(team_id=team_id, user_id=self.id).first()
+            if membership and team and team.members:
+                if team.members.count() > 1:
+                    member_counts = [tm.user.access_count or 0 for tm in team.members.all() if tm.user]
+                    if member_counts:
+                        max_cnt = max(member_counts)
+                        if (self.access_count or 0) >= max_cnt and max_cnt > 0:
+                            badges.append('The Best Member')
+        except Exception as e:
+            import logging
+            logging.error(f"get_team_badges error for user {self.id}, team {team_id}: {e}")
+        
+        return badges
 
     @property
     def title(self):
