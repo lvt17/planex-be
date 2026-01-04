@@ -59,18 +59,51 @@ class User(db.Model):
         return locked_until > now
     
     @property
-    def title(self):
-        """User title based on new rules"""
+    def badges(self):
+        """Returns a list of badges (titles) for the user"""
+        results = []
+        
+        # 1. Primary Prestige Tier
         if self.email in ['lieutoan7788a@gmail.com', 'Vtoanhihihi@gmail.com']:
-            return 'Planex Ghost'
-        count = self.access_count or 0
-        if count >= 1000:
-            return 'Planex Legend'
-        if count >= 100:
-            return 'Planex Master'
-        if count >= 10:
-            return 'Planex Citizen'
-        return 'Planex Newbie'
+            results.append('Planex Ghost')
+        else:
+            count = self.access_count or 0
+            if count >= 1000:
+                results.append('Planex Legend')
+            elif count >= 100:
+                results.append('Planex Master')
+            elif count >= 10:
+                results.append('Planex Citizen')
+            else:
+                results.append('Planex Newbie')
+        
+        # 2. Leader Badge (if owns any team)
+        if self.owned_teams.first():
+            results.append('Planex Leader')
+            
+        # 3. Best Member Badge (highest access_count in any team)
+        # Optimized: Only check teams where user is a member
+        memberships = self.team_memberships.all()
+        for m in memberships:
+            team = m.team
+            if team:
+                # Find the max access_count in this team
+                # This could be expensive, but typically teams are small
+                max_count = db.session.query(db.func.max(User.access_count)).join(
+                    'team_memberships'
+                ).filter_by(team_id=team.id).scalar() or 0
+                
+                if self.access_count >= max_count and max_count > 0:
+                    results.append('The Best Member')
+                    break # Only need to find it once
+                    
+        return results
+
+    @property
+    def title(self):
+        """Primary title for backward compatibility"""
+        b = self.badges
+        return b[0] if b else 'Planex Newbie'
     
     def to_dict(self):
         return {
@@ -83,5 +116,6 @@ class User(db.Model):
             'locked_until': self.locked_until.isoformat() if self.locked_until else None,
             'is_locked': self.is_locked,
             'access_count': self.access_count or 0,
-            'title': self.title
+            'title': self.title,
+            'badges': self.badges
         }
