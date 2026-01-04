@@ -68,13 +68,17 @@ def get_team(team_id):
     if not membership:
         return jsonify({'error': 'Not a member of this team'}), 403
     
-    # PERFORMANCE: Eager load team, owner, and members with user profiles
+    # Load team with owner (members is dynamic, can't use joinedload)
     team = Team.query.options(
-        joinedload(Team.owner),
-        joinedload(Team.members).joinedload(TeamMembership.user).joinedload(User.storage)
+        joinedload(Team.owner)
     ).get_or_404(team_id)
     
-    members = [m.to_dict() for m in team.members]
+    # Load members separately with eager loading on user and storage
+    members_query = TeamMembership.query.options(
+        joinedload(TeamMembership.user).joinedload(User.storage)
+    ).filter_by(team_id=team_id).all()
+    
+    members = [m.to_dict() for m in members_query]
     
     # Get pending requests for owner/admin
     pending_requests = []
