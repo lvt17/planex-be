@@ -15,22 +15,20 @@ def is_admin(user_id):
     return user and user.email in ['lieutoan7788a@gmail.com', 'Vtoanhihihi@gmail.com']
 
 @bp.route('/definitions', methods=['GET'])
-@jwt_required()
 def get_badge_definitions():
-    """Get all badge definitions (Admin only)"""
-    user_id = get_jwt_identity()
-    if not is_admin(user_id):
+    """Get all badge definitions (Admin only via X-Admin-Token)"""
+    token = request.headers.get('X-Admin-Token')
+    if token != 'secret-admin-token-2026':
         return jsonify({'error': 'Unauthorized'}), 403
     
     badges = BadgeDefinition.query.all()
     return jsonify([b.to_dict() for b in badges])
 
 @bp.route('/definitions', methods=['POST'])
-@jwt_required()
 def create_badge_definition():
-    """Create a new badge definition (Admin only)"""
-    user_id = get_jwt_identity()
-    if not is_admin(user_id):
+    """Create a new badge definition (Admin only via X-Admin-Token)"""
+    token = request.headers.get('X-Admin-Token')
+    if token != 'secret-admin-token-2026':
         return jsonify({'error': 'Unauthorized'}), 403
     
     data = request.get_json()
@@ -49,11 +47,10 @@ def create_badge_definition():
     return jsonify(badge.to_dict()), 201
 
 @bp.route('/definitions/<int:id>', methods=['PUT'])
-@jwt_required()
 def update_badge_definition(id):
-    """Update badge definition (Admin only)"""
-    user_id = get_jwt_identity()
-    if not is_admin(user_id):
+    """Update badge definition (Admin only via X-Admin-Token)"""
+    token = request.headers.get('X-Admin-Token')
+    if token != 'secret-admin-token-2026':
         return jsonify({'error': 'Unauthorized'}), 403
     
     badge = BadgeDefinition.query.get_or_404(id)
@@ -70,11 +67,10 @@ def update_badge_definition(id):
     return jsonify(badge.to_dict())
 
 @bp.route('/definitions/<int:id>', methods=['DELETE'])
-@jwt_required()
 def delete_badge_definition(id):
-    """Delete badge definition (Admin only)"""
-    user_id = get_jwt_identity()
-    if not is_admin(user_id):
+    """Delete badge definition (Admin only via X-Admin-Token)"""
+    token = request.headers.get('X-Admin-Token')
+    if token != 'secret-admin-token-2026':
         return jsonify({'error': 'Unauthorized'}), 403
     
     badge = BadgeDefinition.query.get_or_404(id)
@@ -83,11 +79,10 @@ def delete_badge_definition(id):
     return jsonify({'message': 'Badge deleted successfully'})
 
 @bp.route('/assign', methods=['POST'])
-@jwt_required()
 def assign_badge():
-    """Assign a badge to a user (Admin only)"""
-    admin_id = get_jwt_identity()
-    if not is_admin(admin_id):
+    """Assign a badge to a user (Admin only via X-Admin-Token)"""
+    token = request.headers.get('X-Admin-Token')
+    if token != 'secret-admin-token-2026':
         return jsonify({'error': 'Unauthorized'}), 403
     
     data = request.get_json()
@@ -108,7 +103,7 @@ def assign_badge():
     assignment = UserBadgeAssignment(
         user_id=user.id,
         badge_id=badge.id,
-        assigned_by=admin_id,
+        assigned_by=None,  # No admin_id since we're using token auth
         expires_at=expires_at
     )
     
@@ -121,11 +116,10 @@ def assign_badge():
     }), 201
 
 @bp.route('/assignments/<int:id>', methods=['DELETE'])
-@jwt_required()
 def remove_badge_assignment(id):
-    """Remove a badge assignment (Admin only)"""
-    admin_id = get_jwt_identity()
-    if not is_admin(admin_id):
+    """Remove a badge assignment (Admin only via X-Admin-Token)"""
+    token = request.headers.get('X-Admin-Token')
+    if token != 'secret-admin-token-2026':
         return jsonify({'error': 'Unauthorized'}), 403
     
     assignment = UserBadgeAssignment.query.get_or_404(id)
