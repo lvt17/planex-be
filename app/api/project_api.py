@@ -33,6 +33,7 @@ def create_project():
     project = Project(
         name=data['name'],
         description=data.get('description'),
+        price=data.get('price', 0.0),  # Optional price
         user_id=user_id,
         team_id=None  # Personal project, no team
     )
@@ -71,6 +72,17 @@ def update_project(project_id):
         project.name = data['name']
     if 'description' in data:
         project.description = data['description']
+    if 'price' in data:
+        project.price = data['price']
+    if 'completed' in data:
+        project.completed = data['completed']
+        # Set completed_at when marking as complete
+        if data['completed'] and not project.completed_at:
+            from app.utils.timezone import get_now_vn
+            project.completed_at = get_now_vn()
+        # Clear completed_at when unmarking
+        elif not data['completed']:
+            project.completed_at = None
     
     db.session.commit()
     

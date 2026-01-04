@@ -433,7 +433,9 @@ def handle_projects(team_id):
             return jsonify({'error': 'Project name is required'}), 400
         # Team project: has team_id, NO user_id
         project = Project(
-            name=data['name'], 
+            name=data['name'],
+            description=data.get('description'),
+            price=data.get('price', 0.0),  # Optional price
             team_id=team_id,
             user_id=None  # Team projects don't belong to individual users
         )
