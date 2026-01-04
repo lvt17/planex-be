@@ -45,6 +45,14 @@ class TeamMembership(db.Model):
     inviter = db.relationship('User', back_populates='sent_invites', foreign_keys=[invited_by])
     
     def to_dict(self):
+        # Get badges safely
+        try:
+            user_badges = self.user.badges if self.user else []
+        except Exception as e:
+            import logging
+            logging.error(f"TeamMembership.to_dict badges error for user {self.user_id}: {e}")
+            user_badges = []
+            
         return {
             'id': self.id,
             'team_id': self.team_id,
@@ -54,7 +62,7 @@ class TeamMembership(db.Model):
             'email': self.user.email if self.user else None,
             'avatar_url': self.user.storage.avt_url if self.user and self.user.storage else None,
             'title': self.user.title if self.user else None,
-            'badges': self.user.badges if self.user else [],
+            'badges': user_badges,
             'role': self.role,
             'joined_at': self.joined_at.isoformat() if self.joined_at else None
         }
@@ -74,6 +82,14 @@ class ChatMessage(db.Model):
     user = db.relationship('User', back_populates='chat_messages')
     
     def to_dict(self):
+        # Get badges safely
+        try:
+            user_badges = self.user.badges if self.user else []
+        except Exception as e:
+            import logging
+            logging.error(f"ChatMessage.to_dict badges error for user {self.user_id}: {e}")
+            user_badges = []
+            
         return {
             'id': self.id,
             'team_id': self.team_id,
@@ -82,7 +98,7 @@ class ChatMessage(db.Model):
             'full_name': self.user.full_name if self.user else None,
             'avatar_url': self.user.storage.avt_url if self.user and self.user.storage else None,
             'title': self.user.title if self.user else None,
-            'badges': self.user.badges if self.user else [],
+            'badges': user_badges,
             'content': self.content,
             'image_url': self.image_url,
             'created_at': self.created_at.isoformat() if self.created_at else None
