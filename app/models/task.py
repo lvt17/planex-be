@@ -22,6 +22,7 @@ class Task(db.Model):
     portfolio_thumbnail = db.Column(db.String(500))
     noted = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=get_now_vn)
+    completed_at = db.Column(db.DateTime, nullable=True)
     # Team fields
     team_id = db.Column(db.Integer, db.ForeignKey('teams.id'), nullable=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)

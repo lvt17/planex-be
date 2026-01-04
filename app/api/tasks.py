@@ -152,6 +152,7 @@ def update_task(id):
         was_done = task.is_done
         task.is_done = data['is_done']
         if not was_done and task.is_done:
+            task.completed_at = get_now_vn()
             task_completed.send(task)
             # If this is an assigned team task, notify the creator (leader)
             if task.team_id and task.creator_id and task.creator_id != task.user_id:

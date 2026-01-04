@@ -60,10 +60,11 @@ class User(db.Model):
     
     @property
     def badges(self):
-        """Returns a list of badges (titles) for the user"""
+        """Dynamic and manual badges for the user"""
         results = []
+        now = get_now_vn()
         
-        # 1. Primary Prestige Tier
+        # 1. Primary Prestige Tier (The base badge)
         if self.email in ['lieutoan7788a@gmail.com', 'Vtoanhihihi@gmail.com']:
             results.append('Planex Ghost')
         else:
@@ -81,21 +82,66 @@ class User(db.Model):
         if self.owned_teams.first():
             results.append('Planex Leader')
             
-        # 3. Best Member Badge (highest access_count in any team)
-        # Optimized: Only check teams where user is a member
-        memberships = self.team_memberships.all()
-        for m in memberships:
-            team = m.team
-            if team:
-                # Find the max access_count in this team
-                # This could be expensive, but typically teams are small
-                max_count = db.session.query(db.func.max(User.access_count)).join(
-                    'team_memberships'
-                ).filter_by(team_id=team.id).scalar() or 0
-                
-                if self.access_count >= max_count and max_count > 0:
-                    results.append('The Best Member')
-                    break # Only need to find it once
+        # 3. Dynamic Performance Badges (Star of the Week/Month)
+        from app.models.task import Task
+        
+        # Star of the Week logic:
+        # Completed >= 5 tasks in PREVIOUS week (Sun-Sat). Valid for CURRENT week (Mon-Sun).
+        # Find start of CURRENT week (this Monday 00:00)
+        curr_weekday = now.weekday() # 0 is Monday
+        this_monday = (now - timedelta(days=curr_weekday)).replace(hour=0, minute=0, second=0, microsecond=0)
+        last_sunday = this_monday - timedelta(days=1)
+        prev_sunday_start = last_sunday - timedelta(days=6) # Sunday of the week before
+        
+        tasks_prev_week = Task.query.filter_by(user_id=self.id, is_done=True).filter(
+            Task.completed_at >= prev_sunday_start,
+            Task.completed_at < this_monday
+        ).count()
+        
+        if tasks_prev_week >= 5:
+            results.append('Star of the Week')
+            
+        # Star of the Month logic:
+        # Completed >= 21 tasks in PREVIOUS month. Valid for CURRENT month.
+        first_day_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        last_day_prev_month = first_day_this_month - timedelta(days=1)
+        first_day_prev_month = last_day_prev_month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        tasks_prev_month = Task.query.filter_by(user_id=self.id, is_done=True).filter(
+            Task.completed_at >= first_day_prev_month,
+            Task.completed_at < first_day_this_month
+        ).count()
+        
+        if tasks_prev_month >= 21:
+            results.append('Star of the Month')
+            
+        # 4. Best Member Badge (highest access_count in any team)
+        try:
+            memberships = self.team_memberships.all()
+            for m in memberships:
+                team = m.team
+                if team and team.members:
+                    # team.members is a relationship to TeamMembership
+                    # Only calculate if team has more than 1 member
+                    if team.members.count() > 1:
+                        # Find max access_count in this team
+                        member_counts = [tm.user.access_count or 0 for tm in team.members.all() if tm.user]
+                        if member_counts:
+                            max_cnt = max(member_counts)
+                            if (self.access_count or 0) >= max_cnt and max_cnt > 0:
+                                results.append('The Best Member')
+                                break
+        except Exception:
+            pass
+            
+        # 5. Manual Assignments from Admin
+        from app.models.badge_model import UserBadgeAssignment
+        active_assignments = UserBadgeAssignment.query.filter_by(user_id=self.id).filter(
+            (UserBadgeAssignment.expires_at == None) | (UserBadgeAssignment.expires_at > now)
+        ).all()
+        for assignment in active_assignments:
+            if assignment.badge:
+                results.append(assignment.badge.name)
                     
         return results
 

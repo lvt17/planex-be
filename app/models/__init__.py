@@ -16,6 +16,7 @@ from app.models.team import Team, TeamMembership, ChatMessage, TeamInvite
 from app.models.notification import Notification
 from app.models.member_rating import MemberRating
 from app.models.project import Project
+from app.models.badge_model import BadgeDefinition, UserBadgeAssignment
 
 __all__ = [
     'User', 'Storage', 'Task', 'Workspace', 'WorkspaceManage',
@@ -26,6 +27,7 @@ __all__ = [
     'UserSurvey', 'BugReport',
     'Category', 'Product', 'Sale',
     'Team', 'TeamMembership', 'ChatMessage', 'TeamInvite',
-    'Notification', 'MemberRating', 'Project'
+    'Notification', 'MemberRating', 'Project',
+    'BadgeDefinition', 'UserBadgeAssignment'
 ]
 
